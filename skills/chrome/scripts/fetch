@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Fetch structured article content from a URL."""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+import lib  # noqa: F401
+
+from lib.cli_helpers import emit, emit_error
+from lib.recipes import fetch_url
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Fetch article JSON from a URL")
+    parser.add_argument("url", help="Page URL to fetch")
+    parser.add_argument("--timeout-ms", type=int, default=25000)
+    parser.add_argument("--headed", action="store_true")
+    parser.add_argument("--user-data-dir")
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    try:
+        emit(
+            asyncio.run(
+                fetch_url(
+                    args.url,
+                    timeout_ms=args.timeout_ms,
+                    headed=args.headed,
+                    user_data_dir=args.user_data_dir,
+                )
+            )
+        )
+    except Exception as exc:
+        emit_error(str(exc))
+
+
+if __name__ == "__main__":
+    main()

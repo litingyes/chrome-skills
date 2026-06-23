@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+python3 -m pip install -r "$DIR/requirements.txt" --target "$DIR/vendor" --upgrade
+echo "Installed dependencies into $DIR/vendor"

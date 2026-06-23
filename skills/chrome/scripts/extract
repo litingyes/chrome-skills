@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""Extract structured data from the current browser session."""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+import lib  # noqa: F401
+
+from lib.cli_helpers import emit, emit_error
+from lib.extract_article import extract_article
+from lib.extract_search import extract_serp
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Extract structured page data")
+    sub = parser.add_subparsers(dest="mode", required=True)
+
+    article = sub.add_parser("article", help="Extract article JSON from current page")
+    article.add_argument("--session", required=True)
+
+    serp = sub.add_parser("serp", help="Extract Google SERP from current page")
+    serp.add_argument("--session", required=True)
+    serp.add_argument("--limit", type=int, default=10)
+
+    return parser
+
+
+async def run_async(args: argparse.Namespace) -> dict:
+    if args.mode == "article":
+        return await extract_article(args.session)
+    if args.mode == "serp":
+        return await extract_serp(args.session, limit=args.limit)
+    raise ValueError(f"Unknown mode: {args.mode}")
+
+
+def main() -> None:
+    parser = build_parser()
+    args = parser.parse_args()
+    try:
+        emit(asyncio.run(run_async(args)))
+    except Exception as exc:
+        emit_error(str(exc))
+
+
+if __name__ == "__main__":
+    main()

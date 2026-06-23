@@ -1,2 +1,5 @@
 .agents/skills
 .claude/skills
+skills/chrome/scripts/vendor/
+skills/chrome/scripts/.venv/
+**/__pycache__/

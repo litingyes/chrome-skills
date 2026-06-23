@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Chrome CDP atomic commands."""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+import lib  # noqa: F401 — bootstrap vendor path
+
+from lib import cdp
+from lib.cli_helpers import emit, emit_error
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Chrome CDP atomic commands")
+    sub = parser.add_subparsers(dest="action", required=True)
+
+    launch = sub.add_parser("launch", help="Start a headless Chrome session")
+    launch.add_argument("--headed", action="store_true")
+    launch.add_argument("--user-data-dir")
+    launch.add_argument("--viewport", help="WIDTHxHEIGHT")
+
+    navigate = sub.add_parser("navigate", help="Navigate the session to a URL")
+    navigate.add_argument("--session", required=True)
+    navigate.add_argument("--url", required=True)
+    navigate.add_argument("--wait", choices=["load", "networkidle", "none"], default="load")
+    navigate.add_argument("--timeout-ms", type=int, default=25000)
+
+    wait = sub.add_parser("wait", help="Wait for a page condition")
+    wait.add_argument("--session", required=True)
+    wait.add_argument("--load", action="store_true")
+    wait.add_argument("--networkidle", action="store_true")
+    wait.add_argument("--selector")
+    wait.add_argument("--text")
+    wait.add_argument("--timeout-ms", type=int, default=25000)
+
+    evaluate = sub.add_parser("evaluate", help="Evaluate JavaScript on the page")
+    evaluate.add_argument("--session", required=True)
+    evaluate.add_argument("--expr")
+    evaluate.add_argument(
+        "--no-await-promise",
+        action="store_true",
+        help="Do not await promises in the expression",
+    )
+
+    snapshot = sub.add_parser("snapshot", help="Capture page metadata")
+    snapshot.add_argument("--session", required=True)
+    snapshot.add_argument("--include-html", action="store_true")
+
+    close = sub.add_parser("close", help="Close one or all sessions")
+    close.add_argument("--session")
+    close.add_argument("--all", action="store_true")
+
+    return parser
+
+
+async def run_async(args: argparse.Namespace) -> dict:
+    if args.action == "launch":
+        viewport = None
+        if args.viewport:
+            width, height = args.viewport.lower().split("x", 1)
+            viewport = (int(width), int(height))
+        return await cdp.launch_browser(
+            headed=args.headed,
+            user_data_dir=args.user_data_dir,
+            viewport=viewport,
+        )
+
+    if args.action == "navigate":
+        wait = None if args.wait == "none" else args.wait
+        return await cdp.navigate_page(
+            args.session,
+            args.url,
+            wait=wait,
+            timeout_ms=args.timeout_ms,
+        )
+
+    if args.action == "wait":
+        if not any([args.load, args.networkidle, args.selector, args.text]):
+            raise ValueError("Specify at least one wait condition")
+        return await cdp.wait_page(
+            args.session,
+            load=args.load,
+            networkidle=args.networkidle,
+            selector=args.selector,
+            text=args.text,
+            timeout_ms=args.timeout_ms,
+        )
+
+    if args.action == "evaluate":
+        expression = args.expr
+        if not expression:
+            expression = sys.stdin.read()
+        if not expression.strip():
+            raise ValueError("Provide --expr or pipe JavaScript on stdin")
+        return await cdp.evaluate_page(
+            args.session,
+            expression,
+            await_promise=not args.no_await_promise,
+        )
+
+    if args.action == "snapshot":
+        return await cdp.snapshot_page(
+            args.session,
+            include_html=args.include_html,
+        )
+
+    if args.action == "close":
+        return cdp.close_browser_session(args.session, close_all=args.all)
+
+    raise ValueError(f"Unknown action: {args.action}")
+
+
+def main() -> None:
+    parser = build_parser()
+    args = parser.parse_args()
+    try:
+        if args.action == "close":
+            emit(cdp.close_browser_session(args.session, close_all=args.all))
+        else:
+            emit(asyncio.run(run_async(args)))
+    except Exception as exc:
+        emit_error(str(exc))
+
+
+if __name__ == "__main__":
+    main()
