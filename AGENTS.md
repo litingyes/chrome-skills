@@ -4,9 +4,9 @@
 
 **chrome-skills** extracts, normalizes, and maintains agent skills from Chrome capabilities. The goal is to give coding agents reliable workflows for browser automation, DevTools, and Chrome platform APIs.
 
-This repo contains **skills and documentation** — not a Chrome extension, browser app, or MCP server implementation.
+This repo contains **skills** (the published catalog) and a **marketing website** — not a Chrome extension or MCP server implementation. The website is a standalone landing page; it is not part of skill runtime.
 
-The published catalog currently centers on a **single hub skill, `chrome`**. Capabilities are internal commands (`cdp`, `extract`, `search`, `fetch`) composed in layers, not separate top-level skills. This reduces context overhead while keeping workflows atomic and composable.
+The published catalog currently centers on a **single hub skill, `chrome`**. Capabilities are internal commands (`cdp`, `extract`, `search`, `fetch`, `audit`) composed in layers, not separate top-level skills. `extract` modes include `article`, `serp`, `layout`, and `a11y`. This reduces context overhead while keeping workflows atomic and composable.
 
 ## Repository map
 
@@ -14,6 +14,8 @@ The published catalog currently centers on a **single hub skill, `chrome`**. Cap
 |------|---------|
 | `skills/<skill-name>/SKILL.md` | Canonical, committed, publishable skills — **only** edit skills here |
 | `skills-lock.json` | Locked references to vendored tooling skills (e.g. `skill-creator`); do not hand-edit hashes |
+| `website/` | Marketing landing page source; edit when changing site UI or copy |
+| `PRODUCT.md` | Brand and product principles; website copy should align with this |
 | `.agents/skills/` | Local Cursor/runtime copies — gitignored, not source of truth |
 | `.claude/skills/` | Local Claude Code copies — gitignored, not source of truth |
 | `README.md` | Human-facing overview; link here instead of duplicating marketing copy |
@@ -26,9 +28,10 @@ When adding or changing a skill, work in `skills/`. Never treat `.agents/skills/
 |------|---------|
 | `skills/chrome/SKILL.md` | Command router and index — the only skill body that should stay resident |
 | `skills/chrome/references/<command>.md` | Per-command workflows; load on demand |
+| `skills/chrome/references/audit.md` | `audit` recipe workflow |
 | `skills/chrome/references/output-schemas.md` | JSON output contracts |
 | `skills/chrome/references/cdp-patterns.md` | agent-browser concept mapping (reference only) |
-| `skills/chrome/scripts/` | CLI entrypoints (`cdp`, `extract`, `search`, `fetch`) |
+| `skills/chrome/scripts/` | CLI entrypoints (`cdp`, `extract`, `search`, `fetch`, `audit`) |
 | `skills/chrome/scripts/lib/` | CDP client, extractors, recipes — edit implementation here |
 | `skills/chrome/scripts/setup` | Installs Python deps into `scripts/vendor/` |
 | `skills/chrome/examples.md` | Copy-paste composition examples |
@@ -45,15 +48,21 @@ flowchart TB
         wait[wait]
         evaluate[evaluate]
         snapshot[snapshot]
+        emulate[emulate]
+        resize[resize]
+        screenshot[screenshot]
         close[close]
     end
     subgraph L2 [L2 extract compose]
         article[article]
         serp[serp]
+        layout[layout]
+        a11y[a11y]
     end
     subgraph L3 [L3 recipes]
         search[search]
         fetch[fetch]
+        audit[audit]
     end
     L1 --> L2
     L2 --> L3
@@ -62,13 +71,13 @@ flowchart TB
 
 | Layer | Command | Session | Role |
 |-------|---------|---------|------|
-| L1 | `cdp <action>` | `launch` creates; others require `--session` | Browser lifecycle and page ops |
-| L2 | `extract <mode>` | Required `--session` | Structured extraction from current page |
-| L3 | `search`, `fetch` | Internal (launch→…→close) | High-frequency one-shot recipes |
+| L1 | `cdp <action>` | `launch` creates; others require `--session` | Browser lifecycle and page ops (`launch` · `navigate` · `wait` · `evaluate` · `snapshot` · `emulate` · `resize` · `screenshot` · `close`) |
+| L2 | `extract <mode>` | Required `--session` | Structured extraction from current page (`article` · `serp` · `layout` · `a11y`) |
+| L3 | `search`, `fetch`, `audit` | Internal (launch→…→close) | High-frequency one-shot recipes |
 
 **Routing** (when user invokes `/chrome`):
 
-1. Parse first token: `cdp` | `extract` | `search` | `fetch`
+1. Parse first token: `cdp` | `extract` | `search` | `fetch` | `audit`
 2. Read **only** `skills/chrome/references/<token>.md`
 3. For `cdp`, second token is the action; for `extract`, second token is the mode
 4. Run matching script under `skills/chrome/scripts/`; scripts emit JSON to stdout
@@ -112,6 +121,7 @@ Rules:
 - Recipe commands must document equivalent `cdp` + `extract` steps in their reference file
 - Use `references/cdp-patterns.md` for agent-browser alignment; do not add agent-browser CLI as a runtime dependency
 - Sessions live in `~/.cache/chrome-skill/sessions/`; always close with `cdp close`
+- UI verification: prefer `audit` or `extract layout` over CSS guesses; use multi-viewport sweeps; treat `issues[]` as facts
 
 Optional bundled resources (general pattern):
 
@@ -133,7 +143,7 @@ skills/<skill-name>/
 
 ### CDP / browser automation
 
-Navigation, extraction, search, fetch, UI audit. Implemented via Python CDP scripts in `skills/chrome/scripts/`. Prefer composable `cdp` atoms over one-off shell. List Chrome/Chromium and `scripts/setup` prerequisites in references.
+Navigation, extraction, search, fetch, and UI layout verification (`audit`, `extract layout`, `extract a11y`). Implemented via Python CDP scripts in `skills/chrome/scripts/`. Prefer composable `cdp` atoms over one-off shell. For UI work, use multi-viewport `audit` and fix from `issues[]` rather than trusting CSS alone. List Chrome/Chromium and `scripts/setup` prerequisites in references.
 
 ### Performance & network
 
@@ -166,12 +176,32 @@ python .agents/skills/skill-creator/scripts/quick_validate.py skills/chrome
 
 Commit only under `skills/` — not under `.agents/skills/` or `.claude/skills/`.
 
+## Website
+
+The `website/` directory is a Vite + React landing page (en / zh-CN). It is separate from skill publishing.
+
+When editing the site:
+
+- Copy and i18n: `website/src/i18n/en.ts`, `website/src/i18n/zh-CN.ts`
+- Recipe composition data: `website/src/lib/hubCompositions.ts` must match `skills/chrome/references/*.md`
+- When changing commands or recipes, keep `SKILL.md` → i18n strings → `hubCompositions.ts` in sync
+- Follow tone in `PRODUCT.md` (technical, restrained, architecture-first)
+
+Local dev (only when the task involves the landing page):
+
+```bash
+cd website && pnpm install && pnpm dev
+```
+
+Do not mix website build steps into skill CLI workflows or skill release paths.
+
 ## Code change principles
 
 - Smallest correct diff; no unrelated refactors
 - Match structure and tone of existing `chrome` commands when extending
 - Comments only for non-obvious Chrome, CDP, or MCP behavior
-- No build tooling, `package.json`, or CI unless explicitly requested
+- **`skills/`** — do not add CI, test scaffolding, or unrelated build tooling unless explicitly requested
+- **`website/`** — `package.json` already exists; run `pnpm dev` / `pnpm build` only when changing the landing page
 
 ## Verification before claiming done
 
@@ -184,12 +214,14 @@ Commit only under `skills/` — not under `.agents/skills/` or `.claude/skills/`
 - [ ] No invented APIs — verified against official or Context7 docs
 - [ ] Changes under `skills/`, not gitignored runtime directories
 - [ ] `scripts/vendor/` and `__pycache__/` not committed
+- [ ] If commands or recipes changed: `README.md`, `SKILL.md`, and website i18n / `hubCompositions.ts` stay aligned (update website only when the task includes it)
 
 ## What not to do
 
 - Do not commit `.agents/skills/` or `.claude/skills/` as canonical skills
 - Do not duplicate README content in AGENTS.md — keep this file operational
 - Do not hand-edit hashes in `skills-lock.json`
-- Do not add tests, CI, or package scaffolding unless explicitly requested
+- Do not add tests, CI, or package scaffolding under `skills/` unless explicitly requested
 - Do not split every Chrome capability into a separate top-level skill — extend `chrome` commands instead
 - Do not pile command details into `SKILL.md` — use `references/`
+- Do not treat `website/` as part of skill runtime or agent skill installation
