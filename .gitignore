@@ -3,3 +3,4 @@
 skills/chrome/scripts/vendor/
 skills/chrome/scripts/.venv/
 **/__pycache__/
+.impeccable

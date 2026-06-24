@@ -1,0 +1,137 @@
+import type { Messages } from './types'
+
+export const zhCN: Messages = {
+  meta: {
+    title: 'chrome-skills — 面向 AI Agent 的 Chrome 自动化',
+    description:
+      'chrome-skills 发布 chrome hub skill —— 一个 Agent Skill，内含可组合的 CDP、提取、搜索与抓取命令，用于浏览器自动化。',
+  },
+  common: {
+    copy: '复制',
+    copied: '已复制',
+    copyAria: '复制命令',
+    copiedAria: '已复制',
+    skipToContent: '跳到正文',
+  },
+  header: {
+    navAria: '页面章节',
+    architecture: '架构',
+    commands: '命令',
+    install: '安装',
+    starGithub: '在 GitHub 上 Star',
+    languageAria: '语言',
+  },
+  hero: {
+    ledeAfterProject: '是项目名。',
+    ledeAfterSkill: '是你安装并调用的 hub skill。',
+    title: '一个 Skill，覆盖 Chrome 自动化',
+    sub: '不必把许多独立 Skill 塞进 Agent 上下文。chrome-skills 只发布一个 chrome hub，内含可组合命令 —— CDP 原子操作、提取模式，以及开箱即用的配方命令。',
+    asideAria: 'Hub skill 概览',
+    factProject: '项目',
+    factSkill: 'Skill 名称',
+    factInvocation: '调用方式',
+    factRuntime: '运行环境',
+    runtimeValue: '本地 Chrome + Python CDP 脚本',
+  },
+  architecture: {
+    title: '为什么是 hub skill？',
+    lead: 'Agent 为上下文里的每一份 Skill 文件买单。chrome-skills 只保留一份精简的 SKILL.md 路由，并按需加载各命令的 reference。能力保持原子、可组合 —— 而不必堆叠多个顶层 Skill。',
+    diagramCaption: '从配方命令到 CDP 原子的 chrome hub skill 命令分层',
+    interactiveHint: '悬停或聚焦 L3 配方命令，查看其如何组合下层能力。',
+    flowLabel: '组合流程',
+    flowIdle: '在上方选择一个配方，追踪 launch → extract → close。',
+    layers: {
+      l3: { label: 'L3 · 配方', desc: '一次性工作流' },
+      l2: { label: 'L2 · 提取', desc: '从当前页面提取结构化数据' },
+      l1: { label: 'L1 · CDP', desc: '浏览器会话原子操作' },
+    },
+    composes: '组合',
+    note: '通过 /chrome 调用 —— Agent 只加载你当前命令所需的 reference。',
+  },
+  commands: {
+    title: '可调用的命令',
+    lead: '/chrome 之后跟五个顶层命令之一。配方命令封装下层能力；会话模式可自由组合流程。',
+    colCommand: '命令',
+    colLayer: '层级',
+    colWhen: '适用场景',
+    expandExample: '展开示例',
+    collapseExample: '收起示例',
+    expanded: {
+      fetch: {
+        title: '抓取文章',
+        cmd: '/chrome fetch "https://example.com"',
+        note: '一次性 URL 提取 —— 启动、导航、extract article、关闭。',
+      },
+      search: {
+        title: '搜索 Google',
+        cmd: '/chrome search "python asyncio"',
+        note: '将 SERP 结果以 JSON 返回给 Agent。',
+      },
+      audit: {
+        title: '审计开发地址',
+        cmd: '/chrome audit "http://localhost:5173" --viewports 375,1280',
+        note: '多视口布局检查，输出可核实的问题列表。',
+      },
+      extract: {
+        title: '从当前页面提取',
+        cmd: '/chrome extract article --session $SESSION',
+        note: '需要已打开的 session —— 在 cdp launch 与 navigate 之后使用。',
+      },
+      cdp: {
+        title: '组合会话',
+        cmd: '/chrome cdp launch → navigate → extract article → cdp close',
+        note: '同一浏览器内处理多页面时，使用 L1 原子命令组合。',
+      },
+    },
+    rows: {
+      fetch: { when: '单个 URL → 文章 JSON' },
+      search: { when: 'Google 搜索一次性完成' },
+      audit: { when: '开发地址的多视口 UI 布局检查' },
+      extract: { when: '从当前页面结构化提取（需要 session）' },
+      cdp: { when: '启动、导航、执行脚本、快照 —— 自定义流程' },
+    },
+    examples: [
+      {
+        id: 'fetch',
+        title: '抓取文章',
+        cmd: '/chrome fetch "https://example.com"',
+        note: '一次性 URL 提取 —— 启动、导航、提取、关闭。',
+      },
+      {
+        id: 'search',
+        title: '搜索 Google',
+        cmd: '/chrome search "python asyncio"',
+        note: '将 SERP 结果以 JSON 返回给 Agent。',
+      },
+      {
+        id: 'audit',
+        title: '审计开发地址',
+        cmd: '/chrome audit "http://localhost:5173" --viewports 375,1280',
+        note: '多视口布局检查，输出可核实的问题列表。',
+      },
+      {
+        id: 'session',
+        title: '组合会话',
+        cmd: '/chrome cdp launch → navigate → extract article → cdp close',
+        note: '同一浏览器内处理多页面时，使用 L1 原子命令组合。',
+      },
+    ],
+  },
+  install: {
+    title: '安装',
+    lead: '用 Skills CLI 添加 Skill，一次性安装 Python 依赖，然后在 Agent 中调用 /chrome。',
+    step1Title: '1. 添加 Skill',
+    step1Label: 'Skills CLI',
+    step2Title: '2. 安装脚本依赖',
+    step2Lead: '在克隆后的仓库根目录执行：',
+    step2Label: 'Setup',
+    step2Note:
+      '需要 Chrome 或 Chromium，以及 Python 3.10+。可选：设置 CHROME_PATH 覆盖浏览器路径。',
+    step3Title: '3. 在 Agent 中调用',
+    step3Label: '第一条命令',
+  },
+  footer: {
+    license: 'Apache 2.0',
+    note: '文档与 Skill 源码在仓库中 ——',
+  },
+}
