@@ -9,9 +9,12 @@ export const en: Messages = {
   common: {
     copy: 'Copy',
     copied: 'Copied',
+    copyFailed: 'Copy failed',
     copyAria: 'Copy command',
     copiedAria: 'Copied',
+    copyFailedAria: 'Could not copy to clipboard',
     skipToContent: 'Skip to content',
+    opensNewTab: '(opens in new tab)',
   },
   header: {
     navAria: 'Page sections',
@@ -30,6 +33,7 @@ export const en: Messages = {
     factProject: 'Project',
     factSkill: 'Skill name',
     factInvocation: 'Invocation',
+    factInvocationValue: '/chrome <command>',
     factRuntime: 'Runtime',
     runtimeValue: 'Local Chrome + Python CDP scripts',
   },

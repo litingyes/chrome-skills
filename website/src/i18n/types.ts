@@ -28,9 +28,12 @@ export type Messages = {
   common: {
     copy: string
     copied: string
+    copyFailed: string
     copyAria: string
     copiedAria: string
+    copyFailedAria: string
     skipToContent: string
+    opensNewTab: string
   }
   header: {
     navAria: string
@@ -49,6 +52,7 @@ export type Messages = {
     factProject: string
     factSkill: string
     factInvocation: string
+    factInvocationValue: string
     factRuntime: string
     runtimeValue: string
   }

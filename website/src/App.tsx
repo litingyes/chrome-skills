@@ -1,8 +1,8 @@
-import { Fragment, useCallback, useRef, useState } from 'react'
+import { Fragment, useCallback, useRef, useState, type CSSProperties } from 'react'
 import { CodeBlock } from './components/CodeBlock'
 import { HubDiagram } from './components/HubDiagram'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
-import { useChromeShortcut, useScrollSpy } from './hooks/useSiteDelight'
+import { useChromeShortcut, useHeaderScroll, useScrollSpy } from './hooks/useSiteDelight'
 import { useI18n } from './i18n/context'
 import { withViewTransition } from './lib/viewTransition'
 import './App.css'
@@ -31,6 +31,7 @@ export default function App() {
   const [commandsPing, setCommandsPing] = useState(false)
   const [expandedCommand, setExpandedCommand] = useState<CommandId | null>(null)
   const activeSection = useScrollSpy(SECTION_IDS)
+  const headerScrolled = useHeaderScroll()
 
   const toggleCommandRow = useCallback((id: CommandId) => {
     withViewTransition(() => {
@@ -39,7 +40,11 @@ export default function App() {
   }, [])
 
   const focusCommands = useCallback(() => {
-    commandsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    commandsRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    })
     setCommandsPing(true)
     window.setTimeout(() => setCommandsPing(false), 1100)
   }, [])
@@ -51,7 +56,7 @@ export default function App() {
       <a className="skip-link" href="#main-content">
         {messages.common.skipToContent}
       </a>
-      <header className="site-header">
+      <header className={`site-header${headerScrolled ? ' site-header--scrolled' : ''}`}>
         <a className="site-logo" href="/">
           <img src="/favicon.svg" width="28" height="28" alt="" aria-hidden="true" />
           <span>chrome-skills</span>
@@ -88,6 +93,7 @@ export default function App() {
         >
           <GitHubIcon />
           {header.starGithub}
+          <span className="visually-hidden"> {messages.common.opensNewTab}</span>
         </a>
       </header>
 
@@ -103,26 +109,25 @@ export default function App() {
           </div>
           <aside className="hero__aside" aria-label={hero.asideAria}>
             <dl className="hero__facts">
-              <div>
-                <dt>{hero.factProject}</dt>
-                <dd>chrome-skills</dd>
-              </div>
-              <div>
-                <dt>{hero.factSkill}</dt>
-                <dd>
-                  <code>chrome</code>
-                </dd>
-              </div>
-              <div>
-                <dt>{hero.factInvocation}</dt>
-                <dd>
-                  <code>/chrome &lt;command&gt;</code>
-                </dd>
-              </div>
-              <div>
-                <dt>{hero.factRuntime}</dt>
-                <dd>{hero.runtimeValue}</dd>
-              </div>
+              {[
+                { label: hero.factProject, value: 'chrome-skills', mono: false },
+                { label: hero.factSkill, value: 'chrome', mono: true },
+                {
+                  label: hero.factInvocation,
+                  value: hero.factInvocationValue,
+                  mono: true,
+                },
+                { label: hero.factRuntime, value: hero.runtimeValue, mono: false },
+              ].map((fact, index) => (
+                <div
+                  key={fact.label}
+                  className="hero__fact"
+                  style={{ '--i': index } as CSSProperties}
+                >
+                  <dt>{fact.label}</dt>
+                  <dd>{fact.mono ? <code>{fact.value}</code> : fact.value}</dd>
+                </div>
+              ))}
             </dl>
           </aside>
         </section>
@@ -190,11 +195,12 @@ export default function App() {
                           </button>
                         </td>
                       </tr>
-                      {expanded ? (
-                        <tr
-                          className={`command-table__expand command-table__expand--${tone}`}
-                        >
-                          <td colSpan={4} id={`command-expand-${id}`}>
+                      <tr
+                        className={`command-table__expand command-table__expand--${tone}`}
+                        hidden={!expanded}
+                      >
+                        <td colSpan={4} id={`command-expand-${id}`}>
+                          {expanded ? (
                             <div
                               className="command-table__expand-panel"
                               style={{ viewTransitionName: `command-expand-${id}` }}
@@ -203,9 +209,9 @@ export default function App() {
                               <CodeBlock code={example.cmd} label={example.title} />
                               <p className="command-table__expand-note">{example.note}</p>
                             </div>
-                          </td>
-                        </tr>
-                      ) : null}
+                          ) : null}
+                        </td>
+                      </tr>
                     </Fragment>
                   )
                 })}
@@ -213,8 +219,12 @@ export default function App() {
             </table>
           </div>
           <ul className="example-list">
-            {commands.examples.map((ex) => (
-              <li key={ex.id} className="example-item">
+            {commands.examples.map((ex, index) => (
+              <li
+                key={ex.id}
+                className="example-item"
+                style={{ '--i': index } as CSSProperties}
+              >
                 <h3>{ex.title}</h3>
                 <CodeBlock code={ex.cmd} label={ex.title} />
                 <p>{ex.note}</p>
@@ -229,20 +239,35 @@ export default function App() {
             <p className="section__lead">{install.lead}</p>
           </div>
           <ol className="install-steps">
-            <li>
-              <h3>{install.step1Title}</h3>
-              <CodeBlock code={INSTALL_CMD} label={install.step1Label} />
-            </li>
-            <li>
-              <h3>{install.step2Title}</h3>
-              <p>{install.step2Lead}</p>
-              <CodeBlock code={SETUP_CMD} label={install.step2Label} />
-              <p className="install-note">{install.step2Note}</p>
-            </li>
-            <li>
-              <h3>{install.step3Title}</h3>
-              <CodeBlock code={FIRST_CMD} label={install.step3Label} />
-            </li>
+            {[
+              {
+                title: install.step1Title,
+                body: <CodeBlock code={INSTALL_CMD} label={install.step1Label} />,
+              },
+              {
+                title: install.step2Title,
+                body: (
+                  <>
+                    <p>{install.step2Lead}</p>
+                    <CodeBlock code={SETUP_CMD} label={install.step2Label} />
+                    <p className="install-note">{install.step2Note}</p>
+                  </>
+                ),
+              },
+              {
+                title: install.step3Title,
+                body: <CodeBlock code={FIRST_CMD} label={install.step3Label} />,
+              },
+            ].map((step, index) => (
+              <li
+                key={step.title}
+                className="install-step"
+                style={{ '--i': index } as CSSProperties}
+              >
+                <h3>{step.title}</h3>
+                {step.body}
+              </li>
+            ))}
           </ol>
         </section>
       </main>
@@ -251,6 +276,7 @@ export default function App() {
         <p>
           <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer">
             litingyes/chrome-skills
+            <span className="visually-hidden"> {messages.common.opensNewTab}</span>
           </a>
           <span aria-hidden="true"> · </span>
           {footer.license}

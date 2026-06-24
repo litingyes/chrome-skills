@@ -15,6 +15,7 @@ import {
   type Locale,
 } from './locales'
 import type { Messages } from './types'
+import { withViewTransition } from '../lib/viewTransition'
 
 const STORAGE_KEY = 'chrome-skills-locale'
 
@@ -40,12 +41,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(readStoredLocale)
 
   const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next)
-    try {
-      localStorage.setItem(STORAGE_KEY, next)
-    } catch {
-      /* ignore */
-    }
+    withViewTransition(() => {
+      setLocaleState(next)
+      try {
+        localStorage.setItem(STORAGE_KEY, next)
+      } catch {
+        /* ignore */
+      }
+    })
   }, [])
 
   const messages = getMessages(locale)

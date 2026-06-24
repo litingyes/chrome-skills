@@ -9,9 +9,12 @@ export const zhCN: Messages = {
   common: {
     copy: '复制',
     copied: '已复制',
+    copyFailed: '复制失败',
     copyAria: '复制命令',
     copiedAria: '已复制',
+    copyFailedAria: '无法复制到剪贴板',
     skipToContent: '跳到正文',
+    opensNewTab: '（在新标签页打开）',
   },
   header: {
     navAria: '页面章节',
@@ -30,6 +33,7 @@ export const zhCN: Messages = {
     factProject: '项目',
     factSkill: 'Skill 名称',
     factInvocation: '调用方式',
+    factInvocationValue: '/chrome <command>',
     factRuntime: '运行环境',
     runtimeValue: '本地 Chrome + Python CDP 脚本',
   },

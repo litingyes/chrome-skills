@@ -6,46 +6,68 @@ type CodeBlockProps = {
   label?: string
 }
 
+type CopyState = 'idle' | 'copied' | 'failed'
+
 export function CodeBlock({ code, label }: CodeBlockProps) {
   const { messages } = useI18n()
-  const [copied, setCopied] = useState(false)
+  const [copyState, setCopyState] = useState<CopyState>('idle')
 
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(code)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
+      setCopyState('copied')
+      window.setTimeout(() => setCopyState('idle'), 2000)
     } catch {
-      setCopied(false)
+      setCopyState('failed')
+      window.setTimeout(() => setCopyState('idle'), 2500)
     }
   }
 
-  const copyLabel = copied ? messages.common.copied : messages.common.copy
-  const copyAria = copied ? messages.common.copiedAria : messages.common.copyAria
+  const { common } = messages
+  const copyLabel =
+    copyState === 'copied'
+      ? common.copied
+      : copyState === 'failed'
+        ? common.copyFailed
+        : common.copy
+  const copyAria =
+    copyState === 'copied'
+      ? common.copiedAria
+      : copyState === 'failed'
+        ? common.copyFailedAria
+        : common.copyAria
+
+  const copyButtonClass = [
+    'code-block__copy',
+    copyState === 'copied' ? 'code-block__copy--copied' : '',
+    copyState === 'failed' ? 'code-block__copy--failed' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <div className={`code-block${copied ? ' code-block--copied' : ''}`}>
+    <div className={`code-block${copyState === 'copied' ? ' code-block--copied' : ''}`}>
       {label ? (
         <div className="code-block__header">
           <span className="code-block__label">{label}</span>
           <button
             type="button"
-            className={`code-block__copy${copied ? ' code-block__copy--copied' : ''}`}
+            className={copyButtonClass}
             onClick={handleCopy}
             aria-label={copyAria}
           >
-            {copied ? <CheckIcon /> : null}
+            {copyState === 'copied' ? <CheckIcon /> : null}
             <span aria-live="polite">{copyLabel}</span>
           </button>
         </div>
       ) : (
         <button
           type="button"
-          className={`code-block__copy code-block__copy--solo${copied ? ' code-block__copy--copied' : ''}`}
+          className={`${copyButtonClass} code-block__copy--solo`}
           onClick={handleCopy}
           aria-label={copyAria}
         >
-          {copied ? <CheckIcon /> : null}
+          {copyState === 'copied' ? <CheckIcon /> : null}
           <span aria-live="polite">{copyLabel}</span>
         </button>
       )}
