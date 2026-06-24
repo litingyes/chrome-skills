@@ -1,19 +1,20 @@
 ---
 name: chrome
-description: Runs local headless Chrome via composable cdp commands, session-based extract, and search/fetch recipes. Use when the user invokes /chrome, asks for browser CDP automation, page extraction, Google search, or structured content from a URL.
+description: Runs local headless Chrome via composable cdp commands, session-based extract (article, layout, a11y), and search/fetch/audit recipes. Use when the user invokes /chrome, asks for browser CDP automation, page extraction, UI layout audit on a dev URL, Google search, or structured content from a URL.
 disable-model-invocation: true
 ---
 
 # Chrome
 
-Composable local Chrome automation for agents. Four top-level commands:
+Composable local Chrome automation for agents. Five top-level commands:
 
 | Command | Layer | Purpose |
 |---------|-------|---------|
-| `cdp` | L1 atomic | Launch, navigate, wait, evaluate, snapshot, close |
-| `extract` | L2 compose | Extract structured data from the **current** page (`article`, `serp`) |
+| `cdp` | L1 atomic | Launch, navigate, wait, evaluate, snapshot, emulate, screenshot, close |
+| `extract` | L2 compose | Extract structured data from the **current** page (`article`, `serp`, `layout`, `a11y`) |
 | `search` | L3 recipe | Google search one-shot |
 | `fetch` | L3 recipe | Single-URL article extraction one-shot |
+| `audit` | L3 recipe | Multi-viewport UI layout verification on a dev URL |
 
 ## Prerequisites
 
@@ -31,7 +32,7 @@ Optional: set `CHROME_PATH` to override Chrome binary discovery.
 
 ## Routing
 
-1. Parse the first token after `/chrome`: `cdp`, `extract`, `search`, or `fetch`.
+1. Parse the first token after `/chrome`: `cdp`, `extract`, `search`, `fetch`, or `audit`.
 2. Read **only** `skills/chrome/references/<token>.md` for workflow details.
 3. Run the matching script under `skills/chrome/scripts/`.
 4. Scripts print JSON to stdout. Summarize for the user; keep the JSON for reasoning.
@@ -43,27 +44,38 @@ skills/chrome/scripts/cdp <action> [options]
 skills/chrome/scripts/extract <mode> --session <id>
 skills/chrome/scripts/search "<query>"
 skills/chrome/scripts/fetch "<url>"
+skills/chrome/scripts/audit "<url>" [options]
 ```
 
 ## When to use which layer
 
 - **One URL, article content** → `fetch`
 - **Google search** → `search`
+- **UI layout on dev server** → `audit` (or `extract layout` in a session)
 - **Multiple pages in one browser** → `cdp launch` → `navigate` + `extract` (repeat) → `cdp close`
 - **Custom JS or debugging** → `cdp evaluate`
 - **CAPTCHA / bot check on Google** → see `references/search.md`; retry with `cdp launch --headed --user-data-dir <profile>`
+- **Core Web Vitals / CLS** → future `extract perf` (see [extension-roadmap.md](references/extension-roadmap.md))
+
+## UI verification principles
+
+- **Never trust CSS alone** — verify rendered layout with `audit` or `extract layout`
+- **Always multi-viewport** — use `audit --viewports 375,1280` (mobile + desktop)
+- **Issues are facts** — fix from `issues[]` (`rule`, `selector`, `viewport`), not HTML guesses
+- **Polish layer** — `audit --include-screenshot` then visual review
+- **Close sessions** — `audit` auto-closes; manual flows need `cdp close`
 
 ## Command index
 
 ### `cdp` actions
 
-`launch` · `navigate` · `wait` · `evaluate` · `snapshot` · `close`
+`launch` · `navigate` · `wait` · `evaluate` · `snapshot` · `emulate` · `resize` · `screenshot` · `close`
 
 Details: [references/cdp.md](references/cdp.md)
 
 ### `extract` modes
 
-`article` · `serp`
+`article` · `serp` · `layout` · `a11y`
 
 Requires `--session`. Details: [references/extract.md](references/extract.md)
 
@@ -71,6 +83,7 @@ Requires `--session`. Details: [references/extract.md](references/extract.md)
 
 - `search "<query>"` — [references/search.md](references/search.md)
 - `fetch "<url>"` — [references/fetch.md](references/fetch.md)
+- `audit "<url>"` — [references/audit.md](references/audit.md)
 
 JSON schemas: [references/output-schemas.md](references/output-schemas.md)
 
@@ -78,3 +91,4 @@ JSON schemas: [references/output-schemas.md](references/output-schemas.md)
 
 - [examples.md](examples.md) — copy-paste flows
 - [references/cdp-patterns.md](references/cdp-patterns.md) — agent-browser concept mapping
+- [references/extension-roadmap.md](references/extension-roadmap.md) — chrome-only extension path (perf, network, future)

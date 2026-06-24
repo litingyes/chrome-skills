@@ -127,17 +127,17 @@ skills/<skill-name>/
 
 | Domain | v1 status | Location |
 |--------|-----------|----------|
-| CDP / browser automation | Implemented | `chrome` commands (`cdp`, `extract`, `search`, `fetch`) |
-| Chrome DevTools MCP | Not implemented | Future independent skill or `chrome` sub-domain |
+| CDP / browser automation | Implemented | `chrome` commands (`cdp`, `extract`, `search`, `fetch`, `audit`) |
+| Performance & network | Future chrome commands | `extract perf`, `extract network` — see `skills/chrome/references/extension-roadmap.md` |
 | Extension / Platform APIs | Not implemented | Future skill or `chrome` command |
 
 ### CDP / browser automation
 
-Navigation, extraction, search, fetch. Implemented via Python CDP scripts in `skills/chrome/scripts/`. Prefer composable `cdp` atoms over one-off shell. List Chrome/Chromium and `scripts/setup` prerequisites in references.
+Navigation, extraction, search, fetch, UI audit. Implemented via Python CDP scripts in `skills/chrome/scripts/`. Prefer composable `cdp` atoms over one-off shell. List Chrome/Chromium and `scripts/setup` prerequisites in references.
 
-### Chrome DevTools MCP
+### Performance & network
 
-Performance audits (Core Web Vitals), network debugging, accessibility checks, trace analysis. Document required MCP server setup and which tools the agent should call. Do not assume DevTools MCP is enabled by default.
+Core Web Vitals (FCP, LCP, CLS), network debugging, trace analysis. Extend the `chrome` hub — do not add external MCP dependencies. See `skills/chrome/references/extension-roadmap.md` for planned commands.
 
 ### Extension / Platform APIs
 

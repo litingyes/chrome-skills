@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Audit UI layout and accessibility on a dev URL."""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+import lib  # noqa: F401
+
+from lib.cli_helpers import emit, emit_error
+from lib.recipes import audit_url
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Audit UI layout on a URL")
+    parser.add_argument("url", help="Page URL (e.g. http://localhost:5173/)")
+    parser.add_argument(
+        "--viewports",
+        default="375,1280",
+        help="Comma-separated widths or WxH pairs (default: 375,1280)",
+    )
+    parser.add_argument(
+        "--selectors",
+        help='Comma-separated CSS selectors (default: main,nav,header,buttons,...)',
+    )
+    parser.add_argument(
+        "--rules",
+        help="Comma-separated rules: spacing,alignment,overflow,touch-target,blank",
+    )
+    parser.add_argument("--include-screenshot", action="store_true")
+    parser.add_argument("--include-a11y", action="store_true")
+    parser.add_argument("--wait-selector", help="Wait for CSS selector before audit")
+    parser.add_argument("--timeout-ms", type=int, default=25000)
+    parser.add_argument("--headed", action="store_true")
+    parser.add_argument("--user-data-dir")
+    return parser
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    try:
+        emit(
+            asyncio.run(
+                audit_url(
+                    args.url,
+                    viewports=args.viewports,
+                    selectors=args.selectors,
+                    rules=args.rules,
+                    include_screenshot=args.include_screenshot,
+                    include_a11y=args.include_a11y,
+                    timeout_ms=args.timeout_ms,
+                    headed=args.headed,
+                    user_data_dir=args.user_data_dir,
+                    wait_selector=args.wait_selector,
+                )
+            )
+        )
+    except Exception as exc:
+        emit_error(str(exc))
+
+
+if __name__ == "__main__":
+    main()

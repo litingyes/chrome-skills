@@ -15,7 +15,9 @@ import lib  # noqa: F401
 
 from lib.cli_helpers import emit, emit_error
 from lib.extract_article import extract_article
+from lib.extract_a11y import extract_a11y
 from lib.extract_search import extract_serp
+from lib.layout_probe import extract_layout
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -29,7 +31,27 @@ def build_parser() -> argparse.ArgumentParser:
     serp.add_argument("--session", required=True)
     serp.add_argument("--limit", type=int, default=10)
 
+    layout = sub.add_parser("layout", help="Extract layout metrics and UI issues")
+    layout.add_argument("--session", required=True)
+    layout.add_argument(
+        "--selectors",
+        help="Comma-separated CSS selectors (default: main,nav,header,buttons,...)",
+    )
+    layout.add_argument(
+        "--rules",
+        help="Comma-separated rules: spacing,alignment,overflow,touch-target,blank",
+    )
+
+    a11y = sub.add_parser("a11y", help="Extract accessibility tree and a11y issues")
+    a11y.add_argument("--session", required=True)
+
     return parser
+
+
+def _parse_csv(value: str | None) -> list[str] | None:
+    if not value:
+        return None
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 async def run_async(args: argparse.Namespace) -> dict:
@@ -37,6 +59,14 @@ async def run_async(args: argparse.Namespace) -> dict:
         return await extract_article(args.session)
     if args.mode == "serp":
         return await extract_serp(args.session, limit=args.limit)
+    if args.mode == "layout":
+        return await extract_layout(
+            args.session,
+            selectors=_parse_csv(args.selectors),
+            rules=_parse_csv(args.rules),
+        )
+    if args.mode == "a11y":
+        return await extract_a11y(args.session)
     raise ValueError(f"Unknown mode: {args.mode}")
 
 

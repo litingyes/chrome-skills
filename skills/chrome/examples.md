@@ -45,3 +45,38 @@ skills/chrome/scripts/cdp evaluate --session "$SESSION" --expr "document.title"
 ```bash
 skills/chrome/scripts/cdp close --all
 ```
+
+## UI layout audit (dev server)
+
+After CSS/component changes on a local app:
+
+```bash
+skills/chrome/scripts/audit "http://localhost:5173/" \
+  --viewports 375,768,1280 \
+  --selectors "main,nav,button,[data-testid]" \
+  --rules spacing,alignment,overflow,touch-target
+```
+
+Fix issues from `issues[]` until `passed: true`. For visual polish:
+
+```bash
+skills/chrome/scripts/audit "http://localhost:5173/" --include-screenshot --include-a11y
+```
+
+## Manual layout extract
+
+```bash
+SESSION=$(skills/chrome/scripts/cdp launch --viewport 1280x720 | python3 -c "import sys,json; print(json.load(sys.stdin)['session_id'])")
+skills/chrome/scripts/cdp navigate --session "$SESSION" --url "http://localhost:5173/" --wait networkidle
+skills/chrome/scripts/extract layout --session "$SESSION" --rules spacing,overflow
+skills/chrome/scripts/cdp emulate --session "$SESSION" --width 375 --height 667
+skills/chrome/scripts/extract layout --session "$SESSION"
+skills/chrome/scripts/cdp screenshot --session "$SESSION" --path /tmp/ui-375.png
+skills/chrome/scripts/cdp close --session "$SESSION"
+```
+
+## Screenshot for visual review
+
+```bash
+skills/chrome/scripts/cdp screenshot --session "$SESSION" --path /tmp/page.png
+```

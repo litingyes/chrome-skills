@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import socket
 import subprocess
@@ -11,6 +12,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 from . import session as session_store
@@ -211,6 +213,55 @@ class CDPSession:
             payload["html_length"] = int(html_len or 0)
         return payload
 
+    async def set_viewport(
+        self,
+        width: int,
+        height: int,
+        *,
+        device_scale_factor: float = 1.0,
+        mobile: bool = False,
+    ) -> None:
+        await self.call("Emulation.setDeviceMetricsOverride", {
+            "width": width,
+            "height": height,
+            "deviceScaleFactor": device_scale_factor,
+            "mobile": mobile,
+        })
+
+    async def screenshot(
+        self,
+        *,
+        path: str | None = None,
+        full_page: bool = False,
+    ) -> dict[str, Any]:
+        await self.call("Page.enable")
+        params: dict[str, Any] = {"format": "png"}
+        if full_page:
+            metrics = await self.call("Page.getLayoutMetrics")
+            content = metrics.get("contentSize", {})
+            width = int(content.get("width", 1280))
+            height = int(content.get("height", 720))
+            params["clip"] = {
+                "x": 0,
+                "y": 0,
+                "width": width,
+                "height": height,
+                "scale": 1,
+            }
+        result = await self.call("Page.captureScreenshot", params)
+        data_b64 = result.get("data", "")
+        output_path = path
+        if output_path:
+            out = Path(output_path)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(base64.b64decode(data_b64))
+        return {
+            "path": output_path,
+            "format": "png",
+            "base64": data_b64 if not output_path else None,
+            "size_bytes": len(base64.b64decode(data_b64)) if data_b64 else 0,
+        }
+
 
 async def _with_page_session(session_id: str) -> tuple[CDPSession, dict[str, Any]]:
     record = session_store.load_session(session_id)
@@ -355,6 +406,64 @@ async def snapshot_page(
         return {
             "command": "cdp",
             "action": "snapshot",
+            "session_id": session_id,
+            **data,
+            "error": None,
+        }
+    finally:
+        await client.close()
+
+
+async def emulate_page(
+    session_id: str,
+    width: int,
+    height: int,
+    *,
+    device_scale_factor: float = 1.0,
+    mobile: bool = False,
+) -> dict[str, Any]:
+    client, _ = await _with_page_session(session_id)
+    try:
+        await client.set_viewport(
+            width,
+            height,
+            device_scale_factor=device_scale_factor,
+            mobile=mobile,
+        )
+        return {
+            "command": "cdp",
+            "action": "emulate",
+            "session_id": session_id,
+            "width": width,
+            "height": height,
+            "device_scale_factor": device_scale_factor,
+            "mobile": mobile,
+            "error": None,
+        }
+    finally:
+        await client.close()
+
+
+async def resize_page(
+    session_id: str,
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    return await emulate_page(session_id, width, height)
+
+
+async def screenshot_page(
+    session_id: str,
+    *,
+    path: str | None = None,
+    full_page: bool = False,
+) -> dict[str, Any]:
+    client, _ = await _with_page_session(session_id)
+    try:
+        data = await client.screenshot(path=path, full_page=full_page)
+        return {
+            "command": "cdp",
+            "action": "screenshot",
             "session_id": session_id,
             **data,
             "error": None,

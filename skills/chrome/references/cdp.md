@@ -64,6 +64,32 @@ skills/chrome/scripts/cdp snapshot --session <id> --include-html
 
 Returns title, url, and html length (or full html with `--include-html`). Not a substitute for `extract article`.
 
+### emulate
+
+```bash
+skills/chrome/scripts/cdp emulate --session <id> --width 375 --height 667
+skills/chrome/scripts/cdp emulate --session <id> --width 1280 --height 720 --mobile
+```
+
+Sets viewport via `Emulation.setDeviceMetricsOverride`. Use between layout extractions for responsive checks.
+
+### resize
+
+```bash
+skills/chrome/scripts/cdp resize --session <id> --width 1280 --height 720
+```
+
+Alias for `emulate` without mobile/scale options.
+
+### screenshot
+
+```bash
+skills/chrome/scripts/cdp screenshot --session <id> --path /tmp/page.png
+skills/chrome/scripts/cdp screenshot --session <id> --path /tmp/full.png --full-page
+```
+
+Captures PNG via `Page.captureScreenshot`. Use for visual review or vision-model polish checks.
+
 ### close
 
 ```bash

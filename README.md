@@ -10,8 +10,8 @@ Agent skills that expose Chrome capabilities to AI agents.
 
 Long-term scope (not all implemented yet):
 
-- **Browser automation** — CDP workflows inside `chrome` (navigation, extraction, search; patterns aligned with tools like agent-browser)
-- **Chrome DevTools MCP** — performance audits, debugging, network inspection, accessibility checks
+- **Browser automation** — CDP workflows inside `chrome` (navigation, extraction, search, UI audit; patterns aligned with tools like agent-browser)
+- **Performance & debugging** — future `chrome` commands (`extract perf`, `extract network`; see `skills/chrome/references/extension-roadmap.md`)
 - **Chrome Extension / Platform APIs** — distilled knowledge from official Chrome docs, structured for agent use
 
 ## Why
@@ -87,11 +87,11 @@ Workflow details: [skills/chrome/SKILL.md](skills/chrome/SKILL.md) and [skills/c
 
 | Skill | Description | Status |
 |-------|-------------|--------|
-| `chrome` | Hub skill for local Chrome automation via composable commands (`cdp`, `extract`, `search`, `fetch`) | Available |
+| `chrome` | Hub skill for local Chrome automation via composable commands (`cdp`, `extract`, `search`, `fetch`, `audit`) | Available |
 
-New Chrome capabilities should be added as **internal commands** inside `chrome` rather than new top-level skills — unless they belong to a fully separate domain (e.g. a future DevTools MCP skill).
+New Chrome capabilities should be added as **internal commands** inside `chrome` rather than new top-level skills — unless they belong to a fully separate domain (e.g. Chrome Extension Platform APIs).
 
-**Roadmap domains:** browser automation (CDP, in `chrome` today), Chrome DevTools MCP, Extension / Platform APIs.
+**Roadmap domains:** browser automation (in `chrome` today), performance & network (future `chrome` commands), Extension / Platform APIs.
 
 > **Note:** `skill-creator` (from [anthropics/skills](https://github.com/anthropics/skills)) is internal dev tooling for authoring skills. It is tracked in `skills-lock.json` but is not a published Chrome skill.
 

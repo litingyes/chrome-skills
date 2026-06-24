@@ -53,6 +53,23 @@ def build_parser() -> argparse.ArgumentParser:
     snapshot.add_argument("--session", required=True)
     snapshot.add_argument("--include-html", action="store_true")
 
+    emulate = sub.add_parser("emulate", help="Set viewport device metrics")
+    emulate.add_argument("--session", required=True)
+    emulate.add_argument("--width", type=int, required=True)
+    emulate.add_argument("--height", type=int, required=True)
+    emulate.add_argument("--device-scale-factor", type=float, default=1.0)
+    emulate.add_argument("--mobile", action="store_true")
+
+    resize = sub.add_parser("resize", help="Resize viewport (alias for emulate)")
+    resize.add_argument("--session", required=True)
+    resize.add_argument("--width", type=int, required=True)
+    resize.add_argument("--height", type=int, required=True)
+
+    screenshot = sub.add_parser("screenshot", help="Capture PNG screenshot")
+    screenshot.add_argument("--session", required=True)
+    screenshot.add_argument("--path", help="Output file path")
+    screenshot.add_argument("--full-page", action="store_true")
+
     close = sub.add_parser("close", help="Close one or all sessions")
     close.add_argument("--session")
     close.add_argument("--all", action="store_true")
@@ -109,6 +126,25 @@ async def run_async(args: argparse.Namespace) -> dict:
         return await cdp.snapshot_page(
             args.session,
             include_html=args.include_html,
+        )
+
+    if args.action == "emulate":
+        return await cdp.emulate_page(
+            args.session,
+            args.width,
+            args.height,
+            device_scale_factor=args.device_scale_factor,
+            mobile=args.mobile,
+        )
+
+    if args.action == "resize":
+        return await cdp.resize_page(args.session, args.width, args.height)
+
+    if args.action == "screenshot":
+        return await cdp.screenshot_page(
+            args.session,
+            path=args.path,
+            full_page=args.full_page,
         )
 
     if args.action == "close":

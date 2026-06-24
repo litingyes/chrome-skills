@@ -11,7 +11,13 @@ This skill does **not** invoke `agent-browser`. Use this table to map concepts w
 | `cdp wait --selector` | `agent-browser wait @ref` / `wait <selector>` | CSS selector |
 | `cdp wait --text` | `agent-browser wait --text "..."` | Substring match |
 | `cdp evaluate` | `agent-browser eval --stdin` | Custom JS |
-| `cdp snapshot` | `agent-browser snapshot` (metadata only) | Full a11y tree not in v1 |
+| `cdp snapshot` | `agent-browser snapshot` (metadata only) | Full a11y tree via `extract a11y` |
+| `cdp emulate` / `resize` | viewport resize | Multi-breakpoint layout audit |
+| `cdp screenshot` | screenshot capture | Visual review / vision model |
+| `extract layout` | custom eval + rules | Structured spacing/alignment/overflow checks |
+| `extract a11y` | a11y tree snapshot | Accessibility issues JSON |
+| `audit` | dogfood-style QA sweep | Multi-viewport layout recipe |
+| `extract perf` | performance metrics | Planned — see extension-roadmap |
 | `extract article` | `agent-browser get text` + structuring | Fixed article JSON schema |
 | `extract serp` | Manual eval on Google SERP | Built-in selectors + captcha detect |
 | `fetch` | open + wait + extract | One-shot recipe |
